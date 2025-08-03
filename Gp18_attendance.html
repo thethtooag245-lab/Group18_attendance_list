@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attendance Agent</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .attendance-form { max-width: 800px; margin: auto; }
+        
+        /* --- Styles for the Input Table --- */
+        #input-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        #input-table th, #input-table td { border: 1px solid #000; padding: 8px; text-align: left; }
+        #input-table th { background-color: #f2f2f2; }
+        #input-table .controls { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+
+        /* --- Styles for the Final Output Table --- */
+        #output-container { margin-top: 30px; }
+        #output-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        #output-table th, #output-table td { border: 1px solid #000; padding: 8px; text-align: left; }
+        #output-table thead th { text-align: center; font-size: 16px; font-weight: bold; }
+        #output-table .header-title { border: none; padding: 10px; font-size: 20px; font-weight: bold; text-align: center; }
+        #output-table .date-subject-header { text-align: center; }
+        #output-table .date-subject-cell { font-weight: normal; }
+        #output-table .leave-cell { background-color: #ffc; }
+    </style>
+</head>
+<body>
+
+    <div class="attendance-form">
+        <div class="controls">
+            <div>
+                <label for="subject-select">Select Subject:</label>
+                <select id="subject-select"></select>
+            </div>
+            <div>
+                <label>Date: <span id="current-date"></span></label>
+            </div>
+        </div>
+
+        <table id="input-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">No</th>
+                    <th style="width: 35%;">Student Name</th>
+                    <th style="width: 20%;">Roll No</th>
+                    <th style="width: 15%;">Attendance</th>
+                </tr>
+            </thead>
+            <tbody id="attendance-table-body">
+                </tbody>
+        </table>
+
+        <div style="text-align: center;">
+            <button onclick="generateAttendanceList()">Generate Formatted List</button>
+        </div>
+
+        <div id="output-container">
+            </div>
+    </div>
+
+    <script>
+        // Data for the agent
+        const students = [
+            { name: "Ma Nan Myint Htwe", rollNo: "IIMBA - 83" },
+            { name: "Ko Phyoe Wai Lin", rollNo: "IIMBA - 99" },
+            { name: "Ko Lynn Zaw Aye", rollNo: "IIMBA - 60" },
+            { name: "Ko Moe Naing", rollNo: "IIMBA - 72" },
+            { name: "Ko Thet Htoo Aung", rollNo: "IIMBA - 133" },
+            { name: "Ma Hsu Lae Nwe", rollNo: "IIMBA - 18" },
+            { name: "Ma Pan Su Khaing", rollNo: "IIMBA - 92" },
+            { name: "Ko Zaw Lin Phyoe", rollNo: "IIMBA - 162" },
+            { name: "Ko Htun Oo Hlaing", rollNo: "IIMBA - 30" }
+        ];
+
+        const subjects = [
+            "MBA-244",
+            "MBA-214",
+            "MBA-222"
+        ];
+
+        // Function to set up the form on page load
+        function setupForm() {
+            // Set the current date
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            document.getElementById('current-date').textContent = `${day}.${month}.${year}`;
+
+            // Populate the subject dropdown
+            const subjectSelect = document.getElementById('subject-select');
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                subjectSelect.appendChild(option);
+            });
+
+            // Populate the attendance table
+            const tableBody = document.getElementById('attendance-table-body');
+            students.forEach((student, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${student.name}</td>
+                    <td>${student.rollNo}</td>
+                    <td>
+                        <select name="attendance-${index}">
+                            <option value="Present">Present</option>
+                            <option value="Leave">Leave</option>
+                        </select>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Function to generate the formatted list that matches the photo
+        function generateAttendanceList() {
+            const date = document.getElementById('current-date').textContent;
+            const subject = document.getElementById('subject-select').value;
+            const tableBody = document.getElementById('attendance-table-body');
+            let outputTableHTML = '';
+
+            // Get attendance from the input table
+            const attendanceData = Array.from(tableBody.querySelectorAll('tr')).map(row => {
+                const select = row.querySelector('select');
+                return { status: select.value, isLeave: select.value === 'Leave' };
+            });
+
+            // Start building the new table
+            outputTableHTML += '<table id="output-table">';
+            
+            // Row for the main title
+            outputTableHTML += '<thead><tr><th class="header-title" colspan="5">2MBA 23 Batch ,Group – 18 Attendance List</th></tr></thead>';
+            
+            // Header row
+            outputTableHTML += '<tbody>';
+            outputTableHTML += '<tr><th rowspan="2">No</th><th rowspan="2">Student Name</th><th rowspan="2">Roll No</th>';
+            outputTableHTML += `<th colspan="2" class="date-subject-header">${date}</th></tr>`;
+            
+            // Sub-header row
+            outputTableHTML += `<tr><th colspan="2" class="date-subject-header date-subject-cell">${subject}</th></tr>`;
+            
+            // Data rows
+            students.forEach((student, index) => {
+                const isLeave = attendanceData[index].isLeave;
+                const statusCellClass = isLeave ? 'class="leave-cell"' : '';
+                outputTableHTML += `<tr>
+                    <td>${index + 1}</td>
+                    <td>${student.name}</td>
+                    <td>${student.rollNo}</td>
+                    <td ${statusCellClass} colspan="2">${attendanceData[index].status}</td>
+                </tr>`;
+            });
+            outputTableHTML += '</tbody></table>';
+
+            document.getElementById('output-container').innerHTML = outputTableHTML;
+        }
+        
+        // Run the setup function when the page loads
+        document.addEventListener('DOMContentLoaded', setupForm);
+
+    </script>
+</body>
+</html>
